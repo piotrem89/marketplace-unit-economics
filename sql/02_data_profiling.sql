@@ -1,6 +1,6 @@
 -- Check total row count and missing values (NULL or empty string)
 SELECT
-	COUNT(*) as total_rows,
+	COUNT(*) AS total_rows,
 	SUM(CASE WHEN Transaction_ID IS NULL OR TRIM(Transaction_ID) = '' THEN 1 ELSE 0 END) AS missing_transaction_id,
     SUM(CASE WHEN Customer_ID IS NULL OR TRIM(Customer_ID) = '' THEN 1 ELSE 0 END) AS missing_customer_id,
     SUM(CASE WHEN Category IS NULL OR TRIM(Category) = '' THEN 1 ELSE 0 END) AS missing_category,
@@ -12,4 +12,14 @@ SELECT
     SUM(CASE WHEN Location IS NULL OR TRIM(Location) = '' THEN 1 ELSE 0 END) AS missing_location,
     SUM(CASE WHEN Transaction_Date IS NULL OR TRIM(Transaction_Date) = '' THEN 1 ELSE 0 END) AS missing_transaction_date,
     SUM(CASE WHEN Discount_Applied IS NULL OR TRIM(Discount_Applied) = '' THEN 1 ELSE 0 END) AS missing_discount_applied
-FROM dbo.stg_retail_sales
+FROM dbo.stg_retail_sales ;
+
+
+-- Check for duplicate transaction IDs
+SELECT
+Transaction_ID,
+COUNT(Transaction_id) AS duplicate_count
+FROM stg_retail_sales
+GROUP BY Transaction_id
+HAVING COUNT(Transaction_id) > 1 ;
+
