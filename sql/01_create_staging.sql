@@ -1,6 +1,6 @@
 IF OBJECT_ID('dbo.stg_retail_sales', 'U') IS NOT NULL
     DROP TABLE dbo.stg_retail_sales;
-GO
+
 
 CREATE TABLE dbo.stg_retail_sales (
     Transaction_ID   NVARCHAR(250),
@@ -15,4 +15,3 @@ CREATE TABLE dbo.stg_retail_sales (
     Transaction_Date NVARCHAR(250),
     Discount_Applied NVARCHAR(250)
 );
-GO
