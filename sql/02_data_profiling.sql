@@ -39,3 +39,13 @@ SUM(CASE WHEN Quantity IS NOT NULL AND TRIM(Quantity) != '' AND TRY_CAST(Quantit
 SUM(CASE WHEN Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != '' AND TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)) <= 0 THEN 1 ELSE 0 END) AS non_positive_price_per_unit,
 SUM(CASE WHEN Total_Spent IS NOT NULL AND TRIM(Total_Spent) != '' AND TRY_CAST(Total_Spent AS DECIMAL(10,2)) <= 0 THEN 1 ELSE 0 END) AS non_positive_total_spent
 FROM stg_retail_sales
+
+
+
+-- Check logic inconsistency between (Quantity * Price_Per_Unit) and Total_Spent
+SELECT
+SUM(CASE WHEN Quantity IS NOT NULL AND TRIM(Quantity) != ''
+AND Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != ''
+AND Total_Spent IS NOT NULL AND TRIM(Total_Spent) != ''
+AND ROUND(TRY_CAST(Quantity AS DECIMAL(10,2)) * TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)),2) !=  TRY_CAST(Total_Spent AS DECIMAL(10,2)) THEN 1 ELSE 0 END) AS calculation_mismatches
+FROM stg_retail_sales
