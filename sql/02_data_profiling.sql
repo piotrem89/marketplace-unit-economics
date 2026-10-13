@@ -12,7 +12,7 @@ SELECT
     SUM(CASE WHEN Location IS NULL OR TRIM(Location) = '' THEN 1 ELSE 0 END) AS missing_location,
     SUM(CASE WHEN Transaction_Date IS NULL OR TRIM(Transaction_Date) = '' THEN 1 ELSE 0 END) AS missing_transaction_date,
     SUM(CASE WHEN Discount_Applied IS NULL OR TRIM(Discount_Applied) = '' THEN 1 ELSE 0 END) AS missing_discount_applied
-FROM dbo.stg_retail_sales ;
+FROM stg_retail_sales ;
 
 
 -- Check for duplicate transaction IDs
@@ -23,3 +23,11 @@ FROM stg_retail_sales
 GROUP BY Transaction_id
 HAVING COUNT(Transaction_id) > 1 ;
 
+
+-- Check invalid data formats
+SELECT
+SUM(CASE WHEN TRIM(Quantity) != '' AND Quantity IS NOT NULL AND TRY_CAST(Quantity AS FLOAT) IS NULL THEN 1 ELSE 0 END) AS invalid_quantity,
+SUM(CASE WHEN TRIM(Price_Per_Unit) != '' AND Price_Per_Unit IS NOT NULL AND TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)) IS NULL THEN 1 ELSE 0 END) AS invalid_price_per_unit,
+SUM(CASE WHEN TRIM(Total_Spent) != '' AND Total_Spent IS NOT NULL AND TRY_CAST(Total_Spent AS DECIMAL(10,2)) IS NULL THEN 1 ELSE 0 END) AS invalid_total_Spent,
+SUM(CASE WHEN TRIM(Transaction_Date) != '' AND Transaction_Date IS NOT NULL AND TRY_CONVERT(DATE, Transaction_Date, 120) IS NULL THEN 1 ELSE 0 END) AS invalid_transaction_Date
+FROM stg_retail_sales
