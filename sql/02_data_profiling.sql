@@ -4,11 +4,16 @@
 -- - Date range: 2022-01-01 to 2025-01-18
 -- - Data quality: valid formats for numbers and dates, no negative values or math mismatches
 -- - Missing values:
---    * Category: 1213
+--    * Category: 1,213
 --    * Item: 609
 --    * Price_Per_Unit: 604
 --    * Quantity: 604
---    * Discount_Applied: 4199
+--    * Discount_Applied: 4,199
+-- - Categorical values:
+--    * Category: 8 clean values (no typos)
+--    * Location: 2 clean values (Online, In-store)
+--    * Payment_Method: 3 clean values (Cash, Digital Wallet, Credit Card)
+--    * Discount_Applied: True, False, and NULL values
 
 
 -- Check total row count and missing values (NULL or empty string)
@@ -39,11 +44,11 @@ HAVING COUNT(Transaction_id) > 1 ;
 
 -- Check invalid data formats
 SELECT
-SUM(CASE WHEN TRIM(Quantity) != '' AND Quantity IS NOT NULL AND TRY_CAST(Quantity AS FLOAT) IS NULL THEN 1 ELSE 0 END) AS invalid_quantity,
-SUM(CASE WHEN TRIM(Price_Per_Unit) != '' AND Price_Per_Unit IS NOT NULL AND TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)) IS NULL THEN 1 ELSE 0 END) AS invalid_price_per_unit,
-SUM(CASE WHEN TRIM(Total_Spent) != '' AND Total_Spent IS NOT NULL AND TRY_CAST(Total_Spent AS DECIMAL(10,2)) IS NULL THEN 1 ELSE 0 END) AS invalid_total_Spent,
-SUM(CASE WHEN TRIM(Transaction_Date) != '' AND Transaction_Date IS NOT NULL AND TRY_CONVERT(DATE, Transaction_Date, 120) IS NULL THEN 1 ELSE 0 END) AS invalid_transaction_Date
-FROM stg_retail_sales
+SUM(CASE WHEN Quantity IS NOT NULL AND TRIM(Quantity) != '' AND TRY_CAST(Quantity AS FLOAT) IS NULL THEN 1 ELSE 0 END) AS invalid_quantity,
+SUM(CASE WHEN Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != '' AND TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)) IS NULL THEN 1 ELSE 0 END) AS invalid_price_per_unit,
+SUM(CASE WHEN Total_Spent IS NOT NULL AND TRIM(Total_Spent) != '' AND TRY_CAST(Total_Spent AS DECIMAL(10,2)) IS NULL THEN 1 ELSE 0 END) AS invalid_total_Spent,
+SUM(CASE WHEN Transaction_Date IS NOT NULL AND TRIM(Transaction_Date) != '' AND TRY_CONVERT(DATE, Transaction_Date, 120) IS NULL THEN 1 ELSE 0 END) AS invalid_transaction_Date
+FROM stg_retail_sales ;
 
 
 -- Check for non-positive or zero values in numeric columns
@@ -51,7 +56,7 @@ SELECT
 SUM(CASE WHEN Quantity IS NOT NULL AND TRIM(Quantity) != '' AND TRY_CAST(Quantity AS FLOAT) <= 0  THEN 1 ELSE 0 END) AS non_positive_quantity,
 SUM(CASE WHEN Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != '' AND TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)) <= 0 THEN 1 ELSE 0 END) AS non_positive_price_per_unit,
 SUM(CASE WHEN Total_Spent IS NOT NULL AND TRIM(Total_Spent) != '' AND TRY_CAST(Total_Spent AS DECIMAL(10,2)) <= 0 THEN 1 ELSE 0 END) AS non_positive_total_spent
-FROM stg_retail_sales
+FROM stg_retail_sales ;
 
 
 -- Check logic inconsistency between (Quantity * Price_Per_Unit) and Total_Spent
@@ -60,7 +65,7 @@ SUM(CASE WHEN Quantity IS NOT NULL AND TRIM(Quantity) != ''
 AND Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != ''
 AND Total_Spent IS NOT NULL AND TRIM(Total_Spent) != ''
 AND ROUND(TRY_CAST(Quantity AS DECIMAL(10,2)) * TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)),2) !=  TRY_CAST(Total_Spent AS DECIMAL(10,2)) THEN 1 ELSE 0 END) AS calculation_mismatches
-FROM stg_retail_sales
+FROM stg_retail_sales ;
 
 
 -- Check min and max transaction dates
@@ -68,4 +73,49 @@ SELECT
 MIN(TRY_CONVERT(DATE, Transaction_Date, 120)) AS min_transaction_date,
 MAX(TRY_CONVERT(DATE, Transaction_Date, 120)) AS max_transaction_date
 FROM stg_retail_sales
-WHERE Transaction_Date IS NOT NULL AND TRIM(Transaction_Date) != ''
+WHERE Transaction_Date IS NOT NULL AND TRIM(Transaction_Date) != '' ;
+
+
+-- Check category values
+SELECT
+Category AS unique_categories,
+COUNT(*) AS row_count
+FROM stg_retail_sales
+GROUP BY Category
+ORDER BY row_count DESC ;
+
+
+-- Check location values
+SELECT
+Location AS unique_location,
+COUNT(*) AS row_count
+FROM stg_retail_sales
+GROUP BY Location
+ORDER BY row_count DESC ;
+
+
+-- Check payment methods
+SELECT
+Payment_Method AS unique_payment_method,
+COUNT(*) AS row_count
+FROM stg_retail_sales
+GROUP BY Payment_Method
+ORDER BY row_count DESC ;
+
+
+-- Check item values
+SELECT
+Item AS unique_item,
+COUNT(*) AS row_count
+FROM stg_retail_sales
+GROUP BY Item
+ORDER BY row_count DESC ;
+
+
+-- Check discount values
+SELECT
+Discount_Applied  AS unique_discount_applied,
+COUNT(*) AS row_count
+FROM stg_retail_sales
+GROUP BY Discount_Applied
+ORDER BY row_count DESC ;
