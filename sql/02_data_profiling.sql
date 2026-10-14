@@ -1,3 +1,16 @@
+-- Data Profiling Summary:
+-- - Total rows: 12,575
+-- - Unique key: Transaction_ID (no duplicates found)
+-- - Date range: 2022-01-01 to 2025-01-18
+-- - Data quality: valid formats for numbers and dates, no negative values or math mismatches
+-- - Missing values:
+--    * Category: 1213
+--    * Item: 609
+--    * Price_Per_Unit: 604
+--    * Quantity: 604
+--    * Discount_Applied: 4199
+
+
 -- Check total row count and missing values (NULL or empty string)
 SELECT
 	COUNT(*) AS total_rows,
