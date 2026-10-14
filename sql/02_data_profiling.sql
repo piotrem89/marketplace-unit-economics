@@ -41,7 +41,6 @@ SUM(CASE WHEN Total_Spent IS NOT NULL AND TRIM(Total_Spent) != '' AND TRY_CAST(T
 FROM stg_retail_sales
 
 
-
 -- Check logic inconsistency between (Quantity * Price_Per_Unit) and Total_Spent
 SELECT
 SUM(CASE WHEN Quantity IS NOT NULL AND TRIM(Quantity) != ''
@@ -49,3 +48,11 @@ AND Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != ''
 AND Total_Spent IS NOT NULL AND TRIM(Total_Spent) != ''
 AND ROUND(TRY_CAST(Quantity AS DECIMAL(10,2)) * TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)),2) !=  TRY_CAST(Total_Spent AS DECIMAL(10,2)) THEN 1 ELSE 0 END) AS calculation_mismatches
 FROM stg_retail_sales
+
+
+-- Check min and max transaction dates
+SELECT
+MIN(TRY_CONVERT(DATE, Transaction_Date, 120)) AS min_transaction_date,
+MAX(TRY_CONVERT(DATE, Transaction_Date, 120)) AS max_transaction_date
+FROM stg_retail_sales
+WHERE Transaction_Date IS NOT NULL AND TRIM(Transaction_Date) != ''
