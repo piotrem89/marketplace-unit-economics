@@ -1,7 +1,10 @@
+-- Transform and clean sales data (handle data types, missing values, and nulls)
+
 IF OBJECT_ID('dbo.cleaned_retail_sales', 'U') IS NOT NULL
     DROP TABLE dbo.cleaned_retail_sales;
 
 
+-- Create target table for preprocessed sales data
 CREATE TABLE dbo.cleaned_retail_sales (
     Transaction_ID   INT,
     Customer_ID      INT,
@@ -16,6 +19,7 @@ CREATE TABLE dbo.cleaned_retail_sales (
     Discount_Applied BIT
 );
 
+-- Load preprocessed data (convert types, replace null categories with 'Unknown', set default discount)
 INSERT INTO dbo.cleaned_retail_sales (
     Transaction_ID,
     Customer_ID,
