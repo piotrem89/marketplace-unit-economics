@@ -30,15 +30,25 @@ INSERT INTO dbo.cleaned_retail_sales (
     Discount_Applied
 )
 SELECT
-TRY_CAST(Transaction_ID AS INT),
-TRY_CAST(Customer_ID AS INT),
-TRIM(Category) AS Category,
-TRIM(Item) AS ITEM,
-TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)),
-TRY_CAST(TRY_CAST(Quantity AS FLOAT) AS INT),
-TRY_CAST(Total_Spent AS DECIMAL(10,2)),
-TRIM(Payment_Method) AS Payment_Method,
-TRIM(Location) AS Location,
-TRY_CONVERT(DATE, Transaction_Date, 120),
-TRY_CAST(Discount_Applied AS BIT)
-FROM dbo.stg_retail_sales ;
+    TRY_CAST(Transaction_ID AS INT) AS Transaction_ID,
+    TRY_CAST(Customer_ID AS INT) AS Customer_ID,
+    CASE
+        WHEN Category IS NULL OR TRIM(Category) = '' THEN 'Unknown'
+        ELSE TRIM(Category) END AS Category,
+    CASE
+        WHEN Item IS NULL OR TRIM(Item) = '' THEN 'Unknown'
+        ELSE TRIM(Item) END AS Item,
+    TRY_CAST(Price_Per_Unit AS DECIMAL(10,2)) AS Price_Per_Unit,
+    TRY_CAST(TRY_CAST(Quantity AS FLOAT) AS INT) AS Quantity,
+    TRY_CAST(Total_Spent AS DECIMAL(10,2)) AS Total_Spent,
+    TRIM(Payment_Method) AS Payment_Method,
+    TRIM(Location) AS Location,
+    TRY_CONVERT(DATE, Transaction_Date, 120) AS Transaction_Date,
+    CASE
+        WHEN TRIM(Discount_Applied) = 'True' THEN 1
+        ELSE 0
+    END AS Discount_Applied
+FROM dbo.stg_retail_sales
+WHERE Price_Per_Unit IS NOT NULL AND TRIM(Price_Per_Unit) != ''
+   AND Quantity IS NOT NULL AND TRIM(Quantity) != ''
+   AND Total_Spent IS NOT NULL AND TRIM(Total_Spent) != '' ;
