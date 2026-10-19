@@ -21,13 +21,14 @@ def get_db_engine():
 
 
 def sales_transformation():
-    """ """
+    """Transform staging sales data into cleaned table."""
     # Define project paths
     base_dir = Path(__file__).resolve().parent.parent
     sql_path = base_dir / "sql" / "03_transform_sales.sql"
 
     engine = get_db_engine()
 
+    # Read and execute SQL script
     with open(sql_path, 'r', encoding='utf-8') as file:
         sql_script = file.read()
         with engine.begin() as conn:
