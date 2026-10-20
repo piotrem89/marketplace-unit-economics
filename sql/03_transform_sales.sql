@@ -6,8 +6,8 @@ IF OBJECT_ID('dbo.cleaned_retail_sales', 'U') IS NOT NULL
 
 -- Create target table for preprocessed sales data
 CREATE TABLE dbo.cleaned_retail_sales (
-    Transaction_ID   INT,
-    Customer_ID      INT,
+    Transaction_ID   NVARCHAR(50),
+    Customer_ID      NVARCHAR(50),
     Category         NVARCHAR(250),
     Item             NVARCHAR(250),
     Price_Per_Unit   DECIMAL(10,2),
@@ -34,8 +34,8 @@ INSERT INTO dbo.cleaned_retail_sales (
     Discount_Applied
 )
 SELECT
-    TRY_CAST(Transaction_ID AS INT) AS Transaction_ID,
-    TRY_CAST(Customer_ID AS INT) AS Customer_ID,
+    TRIM(Transaction_ID) AS Transaction_ID,
+    TRIM(Customer_ID) AS Customer_ID,
     CASE
         WHEN Category IS NULL OR TRIM(Category) = '' THEN 'Unknown'
         ELSE TRIM(Category) END AS Category,
