@@ -47,7 +47,14 @@ SELECT
     f.Channel_Fee_ID,
     d.Date_Key,
     s.Customer_ID,
-    s.Payment_Method,
+    CASE
+        WHEN f.Channel_Name = 'In-Store'
+            THEN CASE WHEN ABS(CHECKSUM(s.Transaction_ID)) % 2 = 0 THEN 'Cash' ELSE 'Credit Card' END
+        WHEN f.Channel_Name = 'Amazon'
+            THEN CASE WHEN ABS(CHECKSUM(s.Transaction_ID)) % 10 < 8 THEN 'Credit Card' ELSE 'Digital Wallet' END
+        ELSE
+            CASE WHEN ABS(CHECKSUM(s.Transaction_ID)) % 10 < 7 THEN 'Digital Wallet' ELSE 'Credit Card' END
+    END AS Payment_Method,
     s.Quantity,
     s.Price_Per_Unit AS Unit_Price,
     CAST(s.Quantity * s.Price_Per_Unit AS DECIMAL(10,2)) AS Gross_Revenue,
