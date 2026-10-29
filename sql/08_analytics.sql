@@ -1,56 +1,91 @@
--- 1. Key Performance Indicators (KPIs)
+-- 1. Overall Business Unit Economics
 SELECT
-	SUM(Total_spent) AS total_revenue,
 	COUNT(Transaction_ID) AS total_transactions,
 	SUM(Quantity) AS total_unit_sold,
-	ROUND(AVG(Total_Spent), 2) AS avg_transaction_value
-FROM dbo.cleaned_retail_sales ;
+	SUM(Gross_Revenue) AS gross_revenue,
+	SUM(Total_COGS) AS total_cogs,
+	SUM(Total_Marketplace_Fees) AS total_marketplace_fees,
+	SUM(Contribution_Margin_USD) AS net_contribution_margin,
+	ROUND((SUM(Contribution_Margin_USD) / NULLIF(SUM(Gross_Revenue),0)) * 100, 2) AS weighted_margin_pct
+FROM dbo.fact_sales ;
 
--- 2. Revenue and Volume by Category
+
+-- 2. Profitability by Channel (Allegro vs Amazon vs Own Store vs In-Store)
 SELECT
-	Category AS category_name,
-	SUM(Total_spent) AS total_revenue,
-	SUM(Quantity) AS total_unit_sold
-FROM dbo.cleaned_retail_sales
-GROUP BY Category
-ORDER BY total_revenue DESC ;
+	f.Channel_Name,
+	f.Channel_Type,
+	COUNT(s.Transaction_ID) AS total_transactions,
+	SUM(s.Gross_Revenue) AS gross_revenue,
+	SUM(s.Total_COGS) AS total_cogs,
+	SUM(s.Total_Marketplace_Fees) AS total_marketplace_fees,
+	SUM(s.Contribution_Margin_USD) AS net_contribution_margin,
+	ROUND((SUM(s.Contribution_Margin_USD) / NULLIF(SUM(s.Gross_Revenue), 0)) * 100, 2) AS weighted_margin_pct
+FROM dbo.fact_sales s
+JOIN dbo.dim_channel_fees f ON f.Channel_Fee_ID = s.Channel_Fee_ID
+GROUP BY f.Channel_Name, f.Channel_Type
+ORDER BY net_contribution_margin DESC ;
 
--- 3. Top 5 Products by Revenue
-SELECT TOP 5
-	Item AS product_name,
-	Category AS category_name,
-	SUM(Total_spent) AS total_revenue,
-	SUM(Quantity) AS total_unit_sold
-FROM dbo.cleaned_retail_sales
-GROUP BY Item, Category
-ORDER BY total_revenue DESC ;
 
--- 4. Monthly Sales Trend
+-- 3. Loss-Making Zombie Products on Marketplaces
 SELECT
-	YEAR(Transaction_Date) AS year,
-	MONTH(Transaction_Date) AS month,
-	COUNT(Transaction_ID) AS total_transactions,
-	SUM(Total_spent) AS total_revenue
-FROM dbo.cleaned_retail_sales
-GROUP BY YEAR(Transaction_Date), MONTH(Transaction_Date)
-ORDER BY year, month ;
+	p.Product_Name,
+	p.Category_Name,
+	f.Channel_Name,
+	SUM(s.Quantity) AS total_units_sold,
+	SUM(s.Gross_Revenue) AS gross_revenue,
+	SUM(s.Total_Marketplace_Fees) AS total_marketplace_fees,
+	SUM(s.Contribution_Margin_USD) AS net_contribution_margin,
+	ROUND((SUM(s.Contribution_Margin_USD) / NULLIF(SUM(s.Gross_Revenue),0)) * 100 ,2) AS weighted_margin_pct
+FROM dbo.fact_sales s
+JOIN dbo.dim_products p ON p.Product_ID = s.Product_ID
+JOIN dbo.dim_channel_fees f ON f.Channel_Fee_ID = s.Channel_Fee_ID
+WHERE f.Channel_Type = 'Marketplace'
+GROUP BY p.Product_Name, p.Category_Name, f.Channel_Name
+HAVING SUM(s.Contribution_Margin_USD) < 0
+ORDER BY net_contribution_margin ;
 
--- 5. Discount Impact Analysis
+
+-- 4. Margin Leakage by Category & Marketplace
 SELECT
-	CASE WHEN Discount_Applied = 1 THEN 'YES' ELSE 'NO' END AS discount_applied,
-	COUNT(Transaction_ID) AS total_transactions,
-	SUM(Total_spent) AS total_revenue,
-	ROUND(AVG(Total_spent), 2) AS avg_transaction_value
-FROM dbo.cleaned_retail_sales
-GROUP BY Discount_Applied ;
+	p.Category_Name AS category_name,
+	f.Channel_Name AS channel_name,
+	SUM(s.Gross_Revenue) AS gross_revenue,
+	SUM(s.Total_COGS) AS total_cogs,
+	SUM(s.Total_Marketplace_Fees) AS total_marketplace_fees,
+	SUM(s.Contribution_Margin_USD) AS net_contribution_margin,
+	ROUND((SUM(s.Total_Marketplace_Fees) / NULLIF(SUM(s.Gross_Revenue), 0)) * 100, 2) AS fee_share_pct
+FROM dbo.fact_sales s
+JOIN dbo.dim_products p ON p.Product_ID = s.Product_ID
+JOIN dbo.dim_channel_fees f ON f.Channel_Fee_ID = s.Channel_Fee_ID
+WHERE f.Channel_Type = 'Marketplace'
+GROUP BY p.Category_Name, f.Channel_Name
+ORDER BY fee_share_pct DESC ;
 
--- 6. Payment Method Breakdown
+
+-- 5. Payment Method Unit Economics
 SELECT
-	Payment_Method AS payment_method,
-	COUNT(Transaction_ID) AS total_transactions,
-	SUM(Total_spent) AS total_revenue,
-	ROUND(AVG(Total_spent), 2) AS avg_transaction_value
-FROM dbo.cleaned_retail_sales
-GROUP BY Payment_Method
-ORDER BY total_transactions DESC ;
+	s.Payment_Method AS payment_method,
+	COUNT(s.Transaction_ID) AS total_transactions,
+	SUM(s.Gross_Revenue ) AS gross_revenue,
+	SUM(s.Contribution_Margin_USD) AS net_contribution_margin,
+	ROUND((SUM(s.Contribution_Margin_USD) / NULLIF(SUM(s.Gross_Revenue),0)) * 100, 2) AS weighted_margin_pct
+FROM dbo.fact_sales s
+GROUP BY s.Payment_Method
+ORDER BY net_contribution_margin DESC ;
 
+
+-- 6. Monthly Sales & Contribution Margin Trend
+SELECT
+	d.Year AS year,
+	d.Month AS month,
+	d.Month_Name AS month_name,
+	COUNT(s.Transaction_ID) AS total_transactions,
+	SUM(s.Gross_Revenue) AS gross_revenue,
+	SUM(s.Total_COGS) AS total_cogs,
+	SUM(s.Total_Marketplace_Fees) AS total_marketplace_fees,
+	SUM(s.Contribution_Margin_USD) AS net_contribution_margin,
+	ROUND((SUM(s.Contribution_Margin_USD) / NULLIF(SUM(s.Gross_Revenue),0)) * 100, 2) AS weighted_margin_pct
+FROM dbo.fact_sales s
+JOIN dbo.dim_date d ON d.Date_Key = s.Date_Key
+GROUP BY d.Year, d.Month, d.Month_Name
+ORDER BY d.Year, d.Month ;
